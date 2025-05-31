@@ -5,9 +5,15 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-// Load environment variables
-dotenv.config();
+// Get current file path and directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables with explicit path
+dotenv.config({ path: join(__dirname, '../.env') });
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -77,7 +83,7 @@ const mongooseOptions = {
   family: 4 // Use IPv4, skip trying IPv6
 };
 
-// Connect to MongoDB
+// Connect to MongoDB with better error handling
 mongoose.connect(process.env.MONGODB_URI, mongooseOptions)
   .then(() => {
     console.log('Connected to MongoDB');
@@ -89,7 +95,8 @@ mongoose.connect(process.env.MONGODB_URI, mongooseOptions)
     });
   })
   .catch((error) => {
-    console.error('MongoDB connection error:', error);
+    console.error('MongoDB connection error:', error.message);
+    console.error('MONGODB_URI:', process.env.MONGODB_URI ? 'Is set' : 'Is not set');
     process.exit(1);
   });
 
