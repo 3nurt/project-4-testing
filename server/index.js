@@ -49,31 +49,36 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
-  // Join a room (could be a community, private chat, etc.)
   socket.on('join-room', (roomId) => {
     socket.join(roomId);
     console.log(`User ${socket.id} joined room: ${roomId}`);
   });
 
-  // Leave a room
   socket.on('leave-room', (roomId) => {
     socket.leave(roomId);
     console.log(`User ${socket.id} left room: ${roomId}`);
   });
 
-  // Handle messages
   socket.on('send-message', (data) => {
     io.to(data.roomId).emit('receive-message', data);
   });
 
-  // Handle disconnect
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
 });
 
+// MongoDB connection options
+const mongooseOptions = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  family: 4 // Use IPv4, skip trying IPv6
+};
+
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGODB_URI, mongooseOptions)
   .then(() => {
     console.log('Connected to MongoDB');
     
@@ -85,6 +90,7 @@ mongoose.connect(process.env.MONGODB_URI)
   })
   .catch((error) => {
     console.error('MongoDB connection error:', error);
+    process.exit(1);
   });
 
 // Handle unhandled promise rejections
