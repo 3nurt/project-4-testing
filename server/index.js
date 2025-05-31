@@ -78,25 +78,39 @@ io.on('connection', (socket) => {
 const mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000,
-  family: 4 // Use IPv4, skip trying IPv6
+  family: 4,
+  authSource: 'admin',
+  retryWrites: true,
+  w: 'majority'
 };
 
-// Connect to MongoDB with better error handling
+// Verify MongoDB URI
+if (!process.env.MONGODB_URI) {
+  console.error('MONGODB_URI is not defined in environment variables');
+  process.exit(1);
+}
+
+// Connect to MongoDB with enhanced error handling
 mongoose.connect(process.env.MONGODB_URI, mongooseOptions)
   .then(() => {
-    console.log('Connected to MongoDB');
+    console.log('Connected to MongoDB successfully');
     
-    // Start server
+    // Start server only after successful database connection
     const PORT = process.env.PORT || 5000;
     httpServer.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((error) => {
-    console.error('MongoDB connection error:', error.message);
-    console.error('MONGODB_URI:', process.env.MONGODB_URI ? 'Is set' : 'Is not set');
+    console.error('MongoDB connection error details:');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    if (error.reason) {
+      console.error('Error reason:', error.reason);
+    }
     process.exit(1);
   });
 
